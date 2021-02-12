@@ -91,10 +91,16 @@ create a progress function and set it in `ParallelProcessor`::
 
     def progress(p):
 
-        print('Total task: {}, Added to queue: {}, Mapper Loaded: {}, Mapper Processed {}'.format(
-            p['total'], p['added'], p['loaded'], p['processed']))
+        # print('Total task: {}, Added to queue: {}, Mapper Loaded: {}, Mapper Processed {}'.format(
+        #    p['total'], p['added'], p['loaded'], p['processed']))
+        if p['processed'] % 10 == 0:
+            print('Progress: {}%'.format(100.0 * p['processed'] / p['total']))
 
-    pp = ParallelProcessor(8, mapper=mapper, progress=progress, progress_total=100)
+    pp = ParallelProcessor(8, mapper=mapper, progress=progress, progress_total=len(tasks))
+    pp.start()
+
+    for t in tasks:
+        pp.add_task(t)
 
 """
 
@@ -110,6 +116,7 @@ from pyrallel import Paralleller
 
 if sys.version_info >= (3, 8):
     from pyrallel import ShmQueue
+
 
 class Mapper(object):
     """
@@ -231,9 +238,14 @@ class ParallelProcessor(Paralleller):
                                 passed to `mapper` function. This has no effect for `Mapper` class.
                                 It defaults to False.
         batch_size (int, optional): Batch size, defaults to 1.
-        progress (Callable, optional): Progress inspection. Defaults to None.
+        progress (Callable, optional): Progress function, which takes a dictionary as input.
+                                The dictionary contains following keys: `total` can be set by `progress_total`,
+                                `added` indicates the number of tasks has been added to the queue,
+                                `loaded` indicates the number of tasks has been loaded to worker processes,
+                                `processed` indicates the number of tasks has been processed by worker processes.
+                                Defaults to None.
         progress_total (int, optional): Total number of tasks. Defaults to None.
-        use_shm (bool, optional): When True, and when riunning on Python version 3.8 or later,
+        use_shm (bool, optional): When True, and when running on Python version 3.8 or later,
                                 use ShmQueue for higher performance.  Defaults to False.
         enable_collector_queues (bool, optional): When True, create a collector queue for each
                                 processor.  When False, do not allocate collector queues, saving
@@ -248,6 +260,7 @@ class ParallelProcessor(Paralleller):
         - Do NOT implement heavy compute-intensive operations in collector, they should be in mapper.
         - Tune the value for queue size and batch size will optimize performance a lot.
         - `collector` only collects returns from `mapper` or `Mapper.process`.
+        - The frequency of executing `progress` function depends on CPU.
     """
 
     # Command format in queue. Represent in tuple.
