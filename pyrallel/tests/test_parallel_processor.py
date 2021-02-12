@@ -128,3 +128,18 @@ def test_with_multiple_output():
 
     for i in [0, 1, 4, 9, 16, 25, 36, 49]:
         assert i in result
+
+
+def test_with_progress():
+    def dummy_computation():
+        time.sleep(0.0001)
+
+    def progress(p):
+        assert p['total'] >= p['added'] >= p['loaded'] >= p['processed']
+
+    pp = ParallelProcessor(NUM_OF_PROCESSOR, dummy_computation, progress=progress, progress_total=10)
+    pp.start()
+    for i in range(10):
+        pp.add_task()
+    pp.task_done()
+    pp.join()
