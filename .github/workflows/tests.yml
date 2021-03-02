@@ -30,4 +30,5 @@ jobs:
         run: |
           # coverage run --omit pyrallel/tests/* -m pytest pyrallel/tests/test_*
           # coverage report
-          coveralls
+          coveralls --service=github
+
